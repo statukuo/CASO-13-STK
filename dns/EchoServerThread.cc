@@ -13,7 +13,7 @@ namespace PracticaCaso
 		// make the type casting and recuperate the parameters using "arg"
 		string msg = (this->client)->receive();
 		cout << "Message received: " << msg << endl;
-		(this->client)->send(msg + " OLAAAAAAAAAAAAAAAAAAAAAAAAA");
+		(this->client)->send(msg + " OLA K ASE TU?");
 		cout << "Message sent: " << msg << endl;
 		(this->client)->close();
 	}
