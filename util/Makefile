@@ -4,7 +4,7 @@
 CC=g++
 LDFLAGS=-shared -lm -lpthread 
 
-main: libesidesocket.so libesidethread.so libesidesh.so  
+main: libesidesocket.so libesidethread.so libesidesh.so  libesidesqlite.so
 
 libesidesocket.so: TcpListener.o
 	$(CC) $(LDFLAGS) TcpListener.o -o libesidesocket.so
@@ -18,11 +18,18 @@ libesidesh.so: MySh.o popen.o
 	$(CC) $(LDFLAGS) MySh.o popen.o -o libesidesh.so
 	cp libesidesh.so libesidesh.dll
 
+libesidesqlite.so: SQLiteMap.o
+	$(CC) $(LDFLAGS) SQLiteMap.o -o libesidesh.so
+	cp libesidesqlite.so libesidesqlite.dll
+
 Thread.o: Thread.cc Thread.h
 	$(CC) -c Thread.cc
 
 TcpListener.o: TcpListener.cc TcpListener.h
 	$(CC) -c TcpListener.cc
+
+SQLiteMap.o: SQLiteMap.cc SQLiteMap.h
+	$(CC) -c SQLiteMap.cc
 
 MySh.o: MySh.cc MySh.h
 	$(CC) -c MySh.cc

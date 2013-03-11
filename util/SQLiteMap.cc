@@ -22,7 +22,21 @@ namespace PracticaCaso {
 
 	void SQLiteMap::loadMappings(string mappingsDBFileName) {
 		// Loads the mappings stored at SQLite DB into the map loadMappings
+
+		char *toEncodePoint=new char[mappingsDBFileName.size()+1];
+		toEncodePoint[mappingsDBFileName.size()]=0;
+		memcpy(toEncodePoint,mappingsDBFileName.c_str(),mappingsDBFileName.size());
+
+		cout << "Opening DnsMap database ..." << endl;
+		if (sqlite3_open(toEncodePoint, &dbh) != SQLITE_OK) {
+			cerr << "Can't open database: " << sqlite3_errmsg(dbh) << endl;
+			sqlite3_close(dbh);
+			exit(1);
+		}
+
 		// In the case that the DB does not exist, create it, its structure is given by file KeyValueDB.sql
+
+
 		// If a select * from KeyValuePair executed through a sqlite3_get_table does not return SQLITE_OK, it means that the table does not exist, and needs being created
 		// If there are unexpected error exit the program with exit(1)
 	}
