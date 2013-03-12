@@ -19,7 +19,7 @@ libesidesh.so: MySh.o popen.o
 	cp libesidesh.so libesidesh.dll
 
 libesidesqlite.so: SQLiteMap.o
-	$(CC) $(LDFLAGS) SQLiteMap.o -o libesidesh.so
+	$(CC) $(LDFLAGS) SQLiteMap.o -lsqlite3 -o libesidesqlite.so
 	cp libesidesqlite.so libesidesqlite.dll
 
 Thread.o: Thread.cc Thread.h
@@ -29,7 +29,7 @@ TcpListener.o: TcpListener.cc TcpListener.h
 	$(CC) -c TcpListener.cc
 
 SQLiteMap.o: SQLiteMap.cc SQLiteMap.h
-	$(CC) -c SQLiteMap.cc
+	$(CC) -lsqlite3 -c SQLiteMap.cc
 
 MySh.o: MySh.cc MySh.h
 	$(CC) -c MySh.cc

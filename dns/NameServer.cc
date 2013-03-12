@@ -9,10 +9,11 @@ extern "C" {
 
 namespace PracticaCaso {
 	NameServer::NameServer(int p, string m, bool leerCache): TcpListener(p) {
-		//cout << "Creating SQLiteMap " << endl;
+		//Descomentadas lineas
+		cout << "Creating SQLiteMap " << endl;
 		// Process the contents of the mapping file
-		//this->sqliteMap = new SQLiteMap(m+"_cache.db");
-		//cout << "Creating SQLiteMap!!!" << endl;
+		this->sqliteMap = new SQLiteMap(m+"_cache.db");
+		cout << "Creating SQLiteMap!!!" << endl;
 		this->leerCache = leerCache;
 		cout << "Calling to loadMappings" << endl;
 		this->loadMappings(m);
@@ -23,12 +24,14 @@ namespace PracticaCaso {
 		dns2IpPortMap = ns.dns2IpPortMap;
 		server_socket = ns.server_socket;
 		port = ns.port;
-		//sqliteMap = ns.sqliteMap;
+		//Linea descomentada
+		sqliteMap = ns.sqliteMap;
 		leerCache = ns.leerCache;
 	}
 
 	NameServer::~NameServer() {
-		//delete this->sqliteMap;
+		//Linea descomentada
+		delete this->sqliteMap;
 		cout << "NameServer destructor called" << endl;
 	}
 
@@ -40,7 +43,8 @@ namespace PracticaCaso {
 		dns2IpPortMap = rhs.dns2IpPortMap;
 		server_socket = rhs.server_socket;
 		port = rhs.port;
-		//sqliteMap = rhs.sqliteMap;
+		//Linea descomentada
+		sqliteMap = rhs.sqliteMap;
 		leerCache = rhs.leerCache;
 		return *this;
 	}
@@ -73,6 +77,26 @@ namespace PracticaCaso {
 		in.close();
 
 		// TODO: If there is a .DB file with previously learned mappings load them into dns2IpPortMap
+
+		if (leerCache)
+		 {				
+			map<string, string>::iterator i; 
+			map<string, string> mapSQLite = this -> sqliteMap -> getMap();
+			for (i = mapSQLite.begin(); i != mapSQLite.end(); ++i)
+			{
+				//Si ya lo tiene lo actualiza
+				if (dns2IpPortMap.find(i->first) != dns2IpPortMap.end())
+				{
+					this -> dns2IpPortMap[i->first] = i->second;
+				}
+				//Si no lo tiene lo crea 
+				else 
+				{
+					dns2IpPortMap.insert (dns2IpPortMap.begin(), pair<string, string>(i->first,i->second)); 
+				}
+			}
+		}
+		in.close();
 	}
 
 	string NameServer::delegateExternalDnsServer(string serverDetails, string dnsName) {
@@ -117,6 +141,18 @@ namespace PracticaCaso {
 							cout << "Child Name server to process request: " << p->first << endl;
 							string ipPortTemp = delegateExternalDnsServer(p->second, dnsName);
 							// TODO: cache the already resolved names in other DNS servers both in memory and sqlite3
+
+							if (ipPortTemp.find("ERROR")!=0){	
+							//si existe--> actualiza
+								if (dns2IpPortMap.find(dnsName) != dns2IpPortMap.end())
+								this -> dns2IpPortMap[dnsName] = ipPortTemp;
+							//si no existe -->añade 
+							else 
+								dns2IpPortMap.insert (dns2IpPortMap.begin(), pair<string, string>(dnsName,ipPortTemp)); 
+								sqliteMap->set(dnsName, ipPortTemp);
+							}
+
+
 							return ipPortTemp;
 						}
 					}
@@ -131,6 +167,18 @@ namespace PracticaCaso {
 						cout << "Parent Name server to process request: " << segment << ": " << this->dns2IpPortMap[segment] << endl;
 						string ipPortTemp = delegateExternalDnsServer(this->dns2IpPortMap[segment], dnsName);
 						// TODO: cache the already resolved names in other DNS servers both in memory and sqlite3
+
+						if (ipPortTemp.find("ERROR")!=0){	
+						//si existe--> actualiza
+							if (dns2IpPortMap.find(dnsName) != dns2IpPortMap.end())
+							this -> dns2IpPortMap[dnsName] = ipPortTemp;
+						//si no existe -->añade 
+						else 
+							dns2IpPortMap.insert (dns2IpPortMap.begin(), pair<string, string>(dnsName,ipPortTemp)); 
+							sqliteMap->set(dnsName, ipPortTemp);
+						}
+
+
 						return ipPortTemp;
 					} else {
 						npos = segment.find(".");
@@ -187,7 +235,7 @@ void usage() {
 	exit(1);
 }
 
-/*
+//Descomemntada funcion
 void processClientRequest(PracticaCaso::TcpClient *dnsClient, PracticaCaso::NameServer* dnsServer) {
 	string dnsEntry = dnsClient->receive();
 	string ipAddressAndPort = dnsServer->translate(dnsEntry);
@@ -195,17 +243,32 @@ void processClientRequest(PracticaCaso::TcpClient *dnsClient, PracticaCaso::Name
 	cout << "DNS resolution for: " << dnsEntry << " is: " << ipAddressAndPort << endl;
 	dnsClient->close();
 }
-//processClientRequest(client, &nameServer);
-*/
 
 int main(int argc, char** argv) {
 	signal(SIGINT,ctrl_c);
 
-	if (argc != 3) {
+	bool leerCache = true;
+
+	if (argc != 3 && argc != 4 ) {
 		usage();
 	}
 
-	PracticaCaso::NameServer nameServer(atoi(argv[1]), (string)argv[2], false);
+	if (argc == 4) 
+	{
+		if (strcmp (argv[3], "false") == 0)
+		{
+			leerCache   = false;
+		}
+
+		if (strcmp (argv[3], "true") == 0)
+		{
+			leerCache   = true;
+		}
+				
+	}
+			
+
+	PracticaCaso::NameServer nameServer(atoi(argv[1]), (string)argv[2], leerCache);
 	cout << "NameServer instance: " << endl << nameServer << endl;
 	// MODIFICATION 2.3.6
 	nameServer_pointer = &nameServer;
