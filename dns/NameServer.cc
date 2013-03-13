@@ -247,7 +247,7 @@ void processClientRequest(PracticaCaso::TcpClient *dnsClient, PracticaCaso::Name
 int main(int argc, char** argv) {
 	signal(SIGINT,ctrl_c);
 
-	bool leerCache = true;
+	bool leerCache = false;
 
 	if (argc != 3 && argc != 4 ) {
 		usage();

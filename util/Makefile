@@ -29,7 +29,7 @@ TcpListener.o: TcpListener.cc TcpListener.h
 	$(CC) -c TcpListener.cc
 
 SQLiteMap.o: SQLiteMap.cc SQLiteMap.h
-	$(CC) -lsqlite3 -c SQLiteMap.cc
+	$(CC) -c SQLiteMap.cc
 
 MySh.o: MySh.cc MySh.h
 	$(CC) -c MySh.cc
