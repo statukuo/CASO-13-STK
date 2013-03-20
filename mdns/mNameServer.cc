@@ -157,8 +157,7 @@ namespace PracticaCaso {
 		while (this->keepRunning) {
 			addrlen=sizeof(addr);
 			// Read one multicast UDP packet.
-			if ((nbytes=recvfrom(fd4Receiving,msgbuf,MSGBUFSIZE,0, (struct sockaddr *)&addr,
-																						 (socklen_t*)&addrlen)) < 0) {
+			if ((nbytes=recvfrom(fd4Receiving,msgbuf,MSGBUFSIZE,0, (struct sockaddr *)&addr, (socklen_t*)&addrlen)) < 0) {
 			   cerr << "recvfrom" << endl;
 			   exit(1);
 			}
@@ -170,6 +169,10 @@ namespace PracticaCaso {
 			// Parse a little bit event parameters.
 			// Three parameters: Command, Payload [dnsName or IpPort string], and random verification-code.
 			ins >> command >> payload >> code;
+
+			this->client->mdns_management(command, payload, code);
+
+			memset(msgbuf,0,sizeof(msgbuf));
 			
 		}	
 	}
@@ -187,19 +190,37 @@ namespace PracticaCaso {
 		string dnsValue;
 		// Begin management utility function.
 
+		if (cmd == "MDNS_RESPONSE") {
+			mdns_manage_response(cmd, payload, code);
+		}
+		if (cmd == "MDNS_REQUEST"){
+			mdns_manage_request(cmd, payload, code);
+		}
+
 	}
 
 	void mNameServer::mdns_manage_response(string cmd, string payload, string code) {
-	cout << "mdns_management: MDNS_RESPONSE received" << endl;
+		cout << "mdns_management: MDNS_RESPONSE received" << endl;
 
-	// Check if there is any pending query.
-	// The arrived MDNS_RESPONSE may be addressed to me.
-	// And then check if the MDNS_RESPONSE corresponds to pendingQuery. Use random code.
-	// satisfiedQuery establishes a default FIRST-FIT criterion. Other methods are welcome. */
-	// Yes, there was a MDNS_RESPONSE, but not for me. This MDNS_RESPONSE can flow, or it  can crash... be the mdns_response, my friend. 
+		// Check if there is any pending query.
+		// The arrived MDNS_RESPONSE may be addressed to me.
+		// And then check if the MDNS_RESPONSE corresponds to pendingQuery. Use random code.
+		// satisfiedQuery establishes a default FIRST-FIT criterion. Other methods are welcome. */
+
+		// Yes, there was a MDNS_RESPONSE, but not for me. This MDNS_RESPONSE can flow, or it  can crash... be the mdns_response, my friend. LOOOOOOL
+
+		if(payload.find("ERROR")!=0){
+			if (!satisfiedQuery && pendingQueryCode == code) {
+					solvedQuery = payload;
+					satisfiedQuery = true; 
+			}
+		}
+
 	// It they don't come to me, snoopy cache can be implemented for efficiency. 
 	// Warning! Man-in-the-middle poisoning attacks enabling.
 	// Query cache
+
+
 	// More MDNS_RESPONSES can come to me, or not to me. First approach, ignore them.
 	// If they come to me, combination methods can be accomplished for completion.
 	// It they don't come to me, snoopy cache can be implemented for efficiency. 
@@ -209,15 +230,24 @@ namespace PracticaCaso {
 	}
 			
 	void mNameServer::mdns_manage_request(string cmd, string payload, string code) {
-	map<string, string>::iterator p;
-	string dnsValue;
+		cout << "mdns_management: MDNS_REQUEST received" << endl;
+		map<string, string>::iterator p;
+		string dnsValue;
 
-	// One MDNS_REQUEST received: you must lookup your table and answer or not.
-	// Lookup the local table. RFC doesn't recommend recursive looking up.
-	// If the requested dnsName is in the local table, response. If don't, not to.
-	// Send the good MDNS_RESPONSE.
-	// If the requested dnsName is not in the local table, don't do anything.
-	// It can be interesting to use a MDNS_ERROR RESPONSE, but with some overhead.	
+		p= dns2IpPortMap.find(payload); 
+
+		if (p != dns2IpPortMap.end()) { 
+			cout << MDNS_RESPONSE <<" " << p->second << " " << code << endl; 
+			string aux =MDNS_RESPONSE + string(" ") + p->second + string(" ") + code; 
+			queryWrapper->send(aux.c_str()); 
+		} 
+
+		// One MDNS_REQUEST received: you must lookup your table and answer or not.
+		// Lookup the local table. RFC doesn't recommend recursive looking up.
+		// If the requested dnsName is in the local table, response. If don't, not to.
+		// Send the good MDNS_RESPONSE.
+		// If the requested dnsName is not in the local table, don't do anything.
+		// It can be interesting to use a MDNS_ERROR RESPONSE, but with some overhead.	
 
 	}
 
