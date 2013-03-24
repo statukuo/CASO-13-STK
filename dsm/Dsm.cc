@@ -71,20 +71,49 @@ namespace PracticaCaso {
 	}
 	
 	
-	// MODIFICACIÓN PRÁCTICA DSM: descripción en 3.3.5 (punto 2): 
+	// MODIFICACIÓN PRÁCTICA DSM: descripción en 3.3.5 (punto 2):  ESTA EN ALUD
 	// Nueva signature constructor: DsmDriver(string ipAddressNameServer, int portNameServer, string dmsServerName2Lookup); 
-	DsmDriver::DsmDriver(string DSMServerIPaddress, int DSMServerPort) {
+/*	DsmDriver::DsmDriver(string DSMServerIPaddress, int DSMServerPort) {
 		// Lookup pop.deusto.es in NameServer
 		this->observer = new DsmObserver(this);
 		this->observer->start();
-
+//aqui habra que hacer un lookup-> del string sacar ip y puerto y devolverlo
 		this->connect(DSMServerIPaddress, DSMServerPort);
 		this->send("dsm_init");
 		this->nid = atoi((this->receive()).c_str());
 
 		// Incluir el lookup en el servidor de nombres para encontrar dirección IP y puerto de dmsServerName2Lookup 
 	}
+*/
 
+	DsmDriver::DsmDriver( string ipAddressNameServer, int portNameServer, string dmsServerName2Lookup ) {
+
+		string DSMServerIPaddress, DSMServerPortString;
+		int DSMServerPort;
+
+		this->observer = new DsmObserver(this);
+		this->observer->start();
+
+		PracticaCaso::TcpClient cliente;
+		cliente.connect( ipAddressNameServer, portNameServer );
+		cliente.send( dmsServerName2Lookup );
+		string ipAddressAndPort = cliente.receive(); 
+		if ( ipAddressAndPort.find("ERROR") == 0 ) {
+			cout << "The DMS name " << dmsServerName2Lookup << " could not be resolved." << endl;
+			this->observer->stop();
+			this->close();
+		} else {
+			ipAddressAndPort = ipAddressAndPort.replace(ipAddressAndPort.find(":", 0), 1, " ");
+			istringstream ins;
+			ins.str( ipAddressAndPort );
+			ins >> DSMServerIPaddress >> DSMServerPortString;
+			DSMServerPort = atoi( DSMServerPortString.c_str() );
+		}
+		cliente.close();
+		this->connect( DSMServerIPaddress, DSMServerPort );
+		this->send("dsm_init");
+		this->nid = atoi((this->receive()).c_str());
+	}
 
 	DsmDriver::~DsmDriver() {
 		ostringstream outs;  // Declare an output string stream.
@@ -116,6 +145,11 @@ namespace PracticaCaso {
 
 	void DsmDriver::dsm_put(string blockId, void * content, int size) throw (DsmException) {
 		ostringstream outs;  // Declare an output string stream.
+
+		//initialise the declared attributes in dsm.h mutex_t and cond_t 
+		pthread_mutex_init( &mutex_t, NULL );
+		pthread_cond_init( &cond_t, NULL );
+		//----------------
 		outs << "dsm_put " << this->nid << " " << blockId << " " << size << " ";
 		for (int i=0; i<size; i++) {
 			outs << ((char *)content)[i];
@@ -167,17 +201,18 @@ namespace PracticaCaso {
 	void DsmDriver::dsm_notify(string cmd, string blockId) {
 		// MODIFICACIÓN PRÁCTICA DSM: seguir indicaciones de 3.3.5 (punto 3)
 		cout << "***NOTIFICATION: " << cmd << " " << blockId << endl;
+		pthread_cond_signal( &cond_t );
 		if (cmd == "dsm_put") {
 			// Add the new DsmEvent received
 			DsmEvent dsmEvent;
 			dsmEvent.cmd = cmd;
 			dsmEvent.blockId = blockId;
-			this->putEvents.push_back(dsmEvent);
+			this->putEvents.push_back(dsmEvent); //si la notificacion es un put registra el nuevo evento
 		} else if (cmd == "dsm_free") {
 			for (vector<DsmEvent>::iterator it = this->putEvents.begin(); it!=this->putEvents.end(); ++it) {
 				if ((it->cmd == "dsm_put") && (it->blockId == blockId)) {
 					// We should wipe out all the dsm_puts received for a block (problem when removing break)
-					this->putEvents.erase(it);
+					this->putEvents.erase(it); //si es free lo borra porque no tiene sentido tener eventos que no existen
 					// TODO: not remove the break
 					break;
 				}
@@ -198,7 +233,10 @@ namespace PracticaCaso {
 			if (!blockPutEventReceived) {
 				// TODO: use binary semaphore initialized to 0 for conditional synchronisation
 				// MODIFICACIÓN PRÁCTICA DSM: Seguir instrucciones de modificación 3.3.5.3
-				sleep(1);
+				//sleep(1);
+				pthread_mutex_lock( &mutex_t );
+				pthread_cond_wait( &cond_t, &mutex_t );
+				pthread_mutex_unlock( &mutex_t );
 			}
 		}
 	}

@@ -28,17 +28,17 @@ namespace PracticaCaso
 
 	struct DsmBlock {
 		string blockId;
-		DsmNodeId creatorNode;
-		DsmNodeId lastAccessNode;
+		DsmNodeId creatorNode; //el nodo que ha creado el bloque de memoria
+		DsmNodeId lastAccessNode; //el ultimo nodo que ha accedido al bloque de memoria. se guarda así porque solo el creador puede borrar el bloque, no puede hacerlo cualquiera
 		int blockSize;
 		void *addr;
-		int size;
+		int size; //para comprobar que el size entra en el block size que hemos reservado
 	};
 
 	struct DsmNodeMetadata {
 		DsmNodeId nid;
-		TcpClient* client;
-		vector <DsmBlock> dsmBlocksRequested;
+		TcpClient* client; //socket de conexión
+		vector <DsmBlock> dsmBlocksRequested;//registrando los bloques que va usando. no sirve para nada mas.
 	};
 };
 

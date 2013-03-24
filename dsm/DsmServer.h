@@ -33,11 +33,12 @@ namespace PracticaCaso
 			int lastNid;
 			int nidCounter;
 			int nodeCounter;
-			map<DsmNodeId, DsmNodeMetadata> dsmNodeMap;
-			map<string, DsmBlock> blockMetadataMap; 
+			map<DsmNodeId, DsmNodeMetadata> dsmNodeMap; //para registrar los drivers que se nos conecten al servidor de memoria
+			map<string, DsmBlock> blockMetadataMap; //el mapa que implemente la memoria compartida
 			// TODO: declare variable of type pthread_rwlock_t 
+			pthread_rwlock_t accessLock;
 
-			void dsm_notify(string message);
+			void dsm_notify(string message); //cada vez que llegue un free o un put lo notifica
 		public:
 			DsmServer(int port);
 			~DsmServer();

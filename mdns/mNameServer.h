@@ -56,7 +56,7 @@ namespace PracticaCaso
 			string delegateExternalDnsServer(string serverDetails, string dnsName);
 			string delegatemDNSCommunity(string dnsName);
 			mDNSObserver* observer;
-			mDNSQueryWrapper* queryWrapper;
+			mDNSQueryWrapper* queryWrapper; //enviar peticiones al grupo
  
 		public:
 			mNameServer(int p, string m, bool leerCache);

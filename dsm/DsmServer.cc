@@ -46,27 +46,35 @@ inline string str(unsigned long num) {
 namespace PracticaCaso {
 	DsmServer::DsmServer(int p): nidCounter(-1), nodeCounter(0), TcpListener(p) {
 		// TODO: create lock 
+		pthread_rwlock_init(&accessLock, NULL);
 	}
 
 
 	DsmServer::~DsmServer() {
 		this->stop();
 		// TODO: destory lock
+		pthread_rwlock_destroy(&accessLock);
 	}
 			
 	DsmNodeId DsmServer::dsm_init(TcpClient * dmsClient) {
+		pthread_rwlock_wrlock(&accessLock);
 		DsmNodeMetadata metadata;
 		metadata.nid = ++nidCounter;
 		metadata.client = dmsClient;
 		dsmNodeMap[metadata.nid] = metadata;
 		nodeCounter++;
+		pthread_rwlock_unlock(&accessLock);
 	
 		return metadata.nid;
 	}
-
+//el nivel de granularidad de los r_lock tiene que ser por cada vez que leamos o escribamos algo, para que haya paralelismo
 	void DsmServer::dsm_exit(DsmNodeId nodeId) {
 		// Remove all the data structures created by this node
+		//proteger con r de lock
+		pthread_rwlock_rdlock(&accessLock);
 		if (dsmNodeMap.find(nodeId) != dsmNodeMap.end()) {
+			pthread_rwlock_unlock(&accessLock);
+			pthread_rwlock_wrlock(&accessLock);
 			--nodeCounter;
 			if (nodeCounter == 0) {
 				for (int i=0; i<dsmNodeMap[nodeId].dsmBlocksRequested.size(); i++) {
@@ -77,12 +85,16 @@ namespace PracticaCaso {
 			}
 			dsmNodeMap.erase(nodeId);
 		}
+		pthread_rwlock_unlock(&accessLock);
 	}
 	
 
 	void * DsmServer::dsm_malloc(DsmNodeId nid, string blockId, int size) {
+		pthread_rwlock_rdlock(&accessLock);
 		if (this->dsmNodeMap.find(nid) != this->dsmNodeMap.end()) {
 			if (this->blockMetadataMap.find(blockId) == this->blockMetadataMap.end()) {
+				pthread_rwlock_unlock(&accessLock);
+				pthread_rwlock_wrlock(&accessLock);
 				DsmBlock block;
 				block.addr = malloc(size);
 				if (block.addr != NULL) {
@@ -94,7 +106,8 @@ namespace PracticaCaso {
 
 					DsmNodeMetadata metadata = this->dsmNodeMap[nid];
 					metadata.dsmBlocksRequested.push_back(block);
-					this->dsmNodeMap[nid] = metadata;				
+					this->dsmNodeMap[nid] = metadata;
+					pthread_rwlock_unlock(&accessLock);				
 					return block.addr;
 				} else {
 					cerr << "ERROR: DMS Server ran out of memory!!!" << endl;
@@ -123,12 +136,14 @@ namespace PracticaCaso {
 			DsmBlock blockMetadata = this->blockMetadataMap[blockId];
 			// We allow anybody to write over the blocks
 			if ( size <= blockMetadata.blockSize ) {
+				pthread_rwlock_wrlock(&accessLock);
 				bzero(blockMetadata.addr, blockMetadata.blockSize);
 				memcpy(blockMetadata.addr, content, size);
 				blockMetadata.size = size;
 				blockMetadata.lastAccessNode = nid;
 				this->blockMetadataMap[blockId] = blockMetadata;
 				dsmPutResult = true;
+				pthread_rwlock_unlock(&accessLock);
 			} else {
 				cerr << "ERROR: The node " << nid << " does not have write access!!!" << endl;
 			}
@@ -160,7 +175,9 @@ namespace PracticaCaso {
 
 	DsmBlock DsmServer::dsm_get(DsmNodeId nid, string blockId) {
 		if (this->blockMetadataMap.find(blockId) != this->blockMetadataMap.end()) {
+			pthread_rwlock_rdlock(&accessLock);
 			DsmBlock temp = this->blockMetadataMap[blockId];
+			pthread_rwlock_unlock(&accessLock);
 			return temp;
 		} else {
 			DsmBlock block;

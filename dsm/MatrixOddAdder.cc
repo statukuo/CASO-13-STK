@@ -14,12 +14,13 @@ void usage() {
 
 int main(int argc, char** argv) {
 
-	if (argc != 2) {
+	if (argc != 4) {
 		usage();
 	}
 
 	// Hacer lookup dsm.deusto.es 
-	PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver("127.0.0.1", atoi(argv[1]));
+	//PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver("127.0.0.1", atoi(argv[1]));
+	PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver(argv[1], atoi(argv[2]), argv[3]);
 	PracticaCaso::DsmData data;
 
 	cout << "Adding array of 100 nums from 0 to 99: " << driver->get_nid() << endl;

@@ -14,29 +14,33 @@ void usage() {
 
 int main(int argc, char** argv) {
 
-	if (argc != 2) {
+	if (argc != 4) {
 		usage();
 	}
 
 	// Hacer lookup dsm.deusto.es 
 
-	PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver("127.0.0.1", atoi(argv[1]));
+	//PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver("127.0.0.1", atoi(argv[1]));
+	PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver(argv[1], atoi(argv[2]), argv[3]);
+		
 	for (int i=0; i<10;i++) {
 		string blockId = "BlockA";
 
 		try {
-			driver->dsm_malloc(blockId, 1024);
+			driver->dsm_malloc(blockId, 1024); //reservamos la memoria, le pasamos el blockid que nos han dado y el tamaño
 			cout << endl << endl << "****** " << i << ": " << blockId << " created" << endl;
 			driver->dsm_put(blockId, (void *)"aupa estudiantes caso", strlen("aupa estudiantes caso"));
+			//metemos el mensaje
 			cout << "data put: " << blockId << " aupa estudiantes caso " << strlen("aupa estudiantes caso") << endl;
-			PracticaCaso::DsmData data = driver->dsm_get(blockId);
+			PracticaCaso::DsmData data = driver->dsm_get(blockId); //cogemos la info
+			//muestro por pantalla el tamaño del string
 			cout << "data read: " << data.size << ": " << string((char *)data.addr, 0, data.size) << endl;
 
 			driver->dsm_put(blockId, (void *)"this assignment really rocks, it's wonderful", strlen("this assignment really rocks, it's wonderful"));
 			cout << "data put: " << blockId << " this assignment really rocks, it's wonderful " << strlen("this assignment really rocks, it's wonderful") << endl;
 			data = driver->dsm_get(blockId);
 			cout << "data read: " << data.size << ": " << string((char*)data.addr, 0, data.size) << endl;
-
+//estamos borrando continuamente la info porque pasamos todo el rato el mismo blockid
 			
 			int dato = 289;
 			driver->dsm_put(blockId, (void *)&dato, sizeof(dato));
