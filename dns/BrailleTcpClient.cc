@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 		input = client->receive();
 
 		//HAY QUE PROCESARLO :D
-		cout << "Message received already translated: " << input << endl;
+		cout << "Message received already translated: \n" << input << endl;
 
 		client->close();	
 	}	

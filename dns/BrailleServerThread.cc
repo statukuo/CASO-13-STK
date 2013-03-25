@@ -50,7 +50,7 @@ namespace PracticaCaso
 		};
 
 		for (i = 0; i < 3; i = i+1){
-			for (int j = 0; j < msg.size(); i = i+1){
+			for (int j = 0; j < msg.size(); j = j+1){
 				response2 = response2 + response.substr ((i * 2) + (j*6),2);
 			};
 
@@ -66,7 +66,7 @@ namespace PracticaCaso
 
 		//AQUI SE DEVOLVERIA EL MENSAJE BRAILLEADO
 		(this->client)->send(response2);
-		cout << "Message sent: " << response2 << endl;
+		cout << "Message sent: \n" << response2 << endl;
 		(this->client)->close();
 	}
 }
