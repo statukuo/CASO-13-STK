@@ -1,5 +1,5 @@
 // BrailleTcpListener.cc
-// author: dipina@eside.deusto.es
+// author: CASO-13
 
 #include "TcpListener.h"
 #include "BrailleServerThread.h"

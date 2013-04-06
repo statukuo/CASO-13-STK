@@ -1,5 +1,5 @@
 // BrailleServerThread.h
-// author: dipina@eside.deusto.es
+// author: CASO-13
 #ifndef __ECHOSERVERTHREAD_H
 #define __ECHOSERVERTHREAD_H
 

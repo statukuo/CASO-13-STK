@@ -94,6 +94,9 @@ namespace PracticaCaso {
 		this->observer = new DsmObserver(this);
 		this->observer->start();
 
+		pthread_mutex_init( &mutex_t, NULL );
+		pthread_cond_init( &cond_t, NULL );
+
 		PracticaCaso::TcpClient cliente;
 		cliente.connect( ipAddressNameServer, portNameServer );
 		cliente.send( dmsServerName2Lookup );
@@ -147,8 +150,8 @@ namespace PracticaCaso {
 		ostringstream outs;  // Declare an output string stream.
 
 		//initialise the declared attributes in dsm.h mutex_t and cond_t 
-		pthread_mutex_init( &mutex_t, NULL );
-		pthread_cond_init( &cond_t, NULL );
+		//pthread_mutex_init( &mutex_t, NULL );
+		//pthread_cond_init( &cond_t, NULL );
 		//----------------
 		outs << "dsm_put " << this->nid << " " << blockId << " " << size << " ";
 		for (int i=0; i<size; i++) {
