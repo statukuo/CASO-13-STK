@@ -18,21 +18,21 @@ void ctrl_c(int)
 	listener_pointer->stop();
 }
 
-/*
-void *thread_listener(void *arg) {
-	PracticaCaso::TcpClient *c = (PracticaCaso::TcpClient *)sarg;
-	string msg = c->receive();
-	cout << "Message received: " << msg << endl;
-	c->send(msg);
-	cout << "Message envidado: " << msg << endl;
-	c->close();
-}*/
+void usage() {
+	cout << "Usage: BrailleTcpListener <server-port>" << endl;
+	exit(1);
+}
 
 
 
-int main() {
+
+int main(int argc, char** argv) {
+	if (argc != 2) {
+		usage();
+	}
+
 	signal(SIGINT,ctrl_c);
-	PracticaCaso::TcpListener listener(6767);
+	PracticaCaso::TcpListener listener(atoi(argv[1]));
 	listener_pointer = &listener;
 	cout << "TcpListener created: " << listener << endl;
 	listener.start();
