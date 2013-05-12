@@ -47,12 +47,13 @@ namespace PracticaCaso
 			DsmNodeId nid;
 			DsmObserver *observer;
 
-			pthread_cond_t cond_t;
-			pthread_mutex_t mutex_t;
+			
 
 			// Caches the DSM events multicasted by the DSM server everytime a new block is put or freed
 			vector<DsmEvent> putEvents;
 			// TODO: Declare here conditional variable  sync_cond thatcontrols the synchronisation between the Observer and the DsmDriver threads
+			pthread_cond_t sync_cond;
+			pthread_mutex_t myMutex;
 		public:
 			DsmDriver( string ipAddressNameServer, int portNameServer, string dmsServerName2Lookup );
 			~DsmDriver();

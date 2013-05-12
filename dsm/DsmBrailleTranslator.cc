@@ -18,6 +18,9 @@ int main(int argc, char** argv) {
 		usage();
 	}
 
+	int i;
+	string plainMsg = "";
+
 	PracticaCaso::DsmDriver * driver = new PracticaCaso::DsmDriver(argv[1], atoi(argv[2]), argv[3]);
 	PracticaCaso::DsmData sentence;
 	PracticaCaso::DsmData alphabet;
@@ -29,7 +32,11 @@ int main(int argc, char** argv) {
 		try {
 			sentence = driver->dsm_get("PLAIN_SENTENCE");
 			braille_trans = true;
-			cout << "Se ha obtenido la frase correctamente: " << endl;
+
+			for (i = 0;i < sentence.size;i=i+1){
+				plainMsg = plainMsg + ((char *)sentence.addr)[i];
+			}
+			cout << "Se ha obtenido la frase correctamente: " << plainMsg << endl;
 		} catch (DsmException dsme) {
 			cerr << "ERROR in dsm_get(\"PLAIN_SENTENCE\") - waiting for other process to initialize it: " << dsme << endl;
 			driver->dsm_wait("PLAIN_SENTENCE");
@@ -49,10 +56,7 @@ int main(int argc, char** argv) {
 	}*/
 
 	//se traduce el mensaje
-	int i;
-	string msg = (char *)sentence.addr;
 	//map<string, string> &alfabeto = *(std::map<string, string> *)alphabet.addr;
-	cout << msg << endl;
 	map<string, string> a;
 
         a.insert (a.begin(), pair<string, string>("A","*     ")); 
@@ -93,17 +97,17 @@ int main(int argc, char** argv) {
 	string response = "";
 	string response2 = "";
 
-	cout << "msg size: " << sentence.addr << endl;
+	cout << "plainMsg size: " << sizeof(sentence.addr) << endl;
 
-	for(i = 0;i < msg.size();i=i+1){
-		char space = msg[i];
+	for(i = 0;i < plainMsg.size();i=i+1){
+		char space = plainMsg[i];
 
 		if (isspace(space)){
 			response = 	response + "      ";
 		}else{
 			stringstream ss;
 			string s;
-			char c = toupper(msg[i]);
+			char c = toupper(plainMsg[i]);
 			ss << c;
 			ss >> s;
 			
@@ -119,35 +123,39 @@ int main(int argc, char** argv) {
 	};
 
 	for (i = 0; i < 3; i = i+1){
-		for (int j = 0; j < msg.size(); j = j+1){
+		for (int j = 0; j < plainMsg.size(); j = j+1){
 			response2 = response2 + response.substr ((i * 2) + (j*6),2);
 		};
 
 		response2 = response2 + "\n";
 	};
 
+	cout << "Traducida la sentencia: " << plainMsg << endl;
+	cout << response2 << endl;
+
+	char* finalResponse = strdup(response2.c_str());
 	//se mete en memoria la frase traducida
 	try
     {
-        driver->dsm_malloc("BRAILLE_TRANSLATION", sizeof(response2));
+        driver->dsm_malloc("BRAILLE_TRANSLATION", response2.size());
         cout << "Adding the BRAILLE_TRANSLATION: " << driver->get_nid() << endl;
         try
         {
-            driver->dsm_put("BRAILLE_TRANSLATION", &response2, sizeof(response2)); 
+            driver->dsm_put("BRAILLE_TRANSLATION", finalResponse, response2.size()); 
         }
         catch (DsmException dsme) 
         {
-            cerr << "ERROR: dsm_put(\"BRAILLE_TRANSLATION\", response2, " << sizeof(response2) << ")): " << dsme << endl;
+            cerr << "ERROR: dsm_put(\"BRAILLE_TRANSLATION\", response2, " << response2.size() << ")): " << dsme << endl;
 			driver->dsm_free("BRAILLE_TRANSLATION");
             exit(1);
         }
     }
     catch (DsmException dsme) 
     {
-        cerr << "ERROR in dsm_malloc(\"BRAILLE_TRANSLATION\", response2, " << sizeof(response2) << ")): " << dsme << endl;
+        cerr << "ERROR in dsm_malloc(\"BRAILLE_TRANSLATION\", response2, " << response2.size() << ")): " << dsme << endl;
         exit(1);
     }
-    sleep(1);
+    sleep(3);
     driver->dsm_free("BRAILLE_TRANSLATION");
 	delete driver;
 }

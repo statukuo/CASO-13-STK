@@ -94,9 +94,6 @@ namespace PracticaCaso {
 		this->observer = new DsmObserver(this);
 		this->observer->start();
 
-		pthread_mutex_init( &mutex_t, NULL );
-		pthread_cond_init( &cond_t, NULL );
-
 		PracticaCaso::TcpClient cliente;
 		cliente.connect( ipAddressNameServer, portNameServer );
 		cliente.send( dmsServerName2Lookup );
@@ -116,6 +113,9 @@ namespace PracticaCaso {
 		this->connect( DSMServerIPaddress, DSMServerPort );
 		this->send("dsm_init");
 		this->nid = atoi((this->receive()).c_str());
+
+		pthread_cond_init( &sync_cond, NULL );
+		pthread_mutex_init( &myMutex, NULL );
 	}
 
 	DsmDriver::~DsmDriver() {
@@ -125,6 +125,9 @@ namespace PracticaCaso {
 		string exitOK = this->receive();
 		this->observer->stop();
 		this->close();
+
+		pthread_cond_destroy(&sync_cond);
+		pthread_mutex_destroy(&myMutex);
 	}
 
 	DsmNodeId DsmDriver::get_nid() {
@@ -149,11 +152,8 @@ namespace PracticaCaso {
 	void DsmDriver::dsm_put(string blockId, void * content, int size) throw (DsmException) {
 		ostringstream outs;  // Declare an output string stream.
 
-		//initialise the declared attributes in dsm.h mutex_t and cond_t 
-		//pthread_mutex_init( &mutex_t, NULL );
-		//pthread_cond_init( &cond_t, NULL );
-		//----------------
 		outs << "dsm_put " << this->nid << " " << blockId << " " << size << " ";
+
 		for (int i=0; i<size; i++) {
 			outs << ((char *)content)[i];
 		}
@@ -203,8 +203,8 @@ namespace PracticaCaso {
 
 	void DsmDriver::dsm_notify(string cmd, string blockId) {
 		// MODIFICACIÓN PRÁCTICA DSM: seguir indicaciones de 3.3.5 (punto 3)
-		cout << "***NOTIFICATION: " << cmd << " " << blockId << endl;
-		pthread_cond_signal( &cond_t );
+		pthread_cond_signal( &sync_cond );
+		cout << "***NOTIFICATION: " << cmd << " " << blockId << endl;		
 		if (cmd == "dsm_put") {
 			// Add the new DsmEvent received
 			DsmEvent dsmEvent;
@@ -237,9 +237,9 @@ namespace PracticaCaso {
 				// TODO: use binary semaphore initialized to 0 for conditional synchronisation
 				// MODIFICACIÓN PRÁCTICA DSM: Seguir instrucciones de modificación 3.3.5.3
 				//sleep(1);
-				pthread_mutex_lock( &mutex_t );
-				pthread_cond_wait( &cond_t, &mutex_t );
-				pthread_mutex_unlock( &mutex_t );
+				pthread_mutex_lock(&myMutex);
+				pthread_cond_wait(&sync_cond, &myMutex);
+				pthread_mutex_unlock(&myMutex);  // UNLOCK
 			}
 		}
 	}
