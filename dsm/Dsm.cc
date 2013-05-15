@@ -236,10 +236,10 @@ namespace PracticaCaso {
 			if (!blockPutEventReceived) {
 				// TODO: use binary semaphore initialized to 0 for conditional synchronisation
 				// MODIFICACIÓN PRÁCTICA DSM: Seguir instrucciones de modificación 3.3.5.3
-				//sleep(1);
-				pthread_mutex_lock(&myMutex);
-				pthread_cond_wait(&sync_cond, &myMutex);
-				pthread_mutex_unlock(&myMutex);  // UNLOCK
+				sleep(1);
+				//pthread_mutex_lock(&myMutex);
+				//pthread_cond_wait(&sync_cond, &myMutex);
+				//pthread_mutex_unlock(&myMutex);   // UNLOCK
 			}
 		}
 	}
